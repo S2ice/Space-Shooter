@@ -11,39 +11,45 @@ from player.ship import Ship
 from player.cosmetic.bullet import Bullet
 from enemies.alien import Alien
 
+"""Основной класс игрового окна"""
 class SpaceShooter:
-
+    """Инициализируем игру и создаем игровые ресурсы"""
     def __init__(self):
-        pygame.init()
-        self.settings = Settings()
+        pygame.init() 
+        self.settings = Settings()    # Загружаем настройки игры 
 
-        self.screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
+        self.screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)    # Создаю полноэкранное окно 
+        """Обновляю настройки ширины/высоты в соотвествии с экраном"""
         self.settings.screen_width = self.screen.get_rect().width
         self.settings.screen_height = self.screen.get_rect().height
         pygame.display.set_caption("Space Shooter")
 
+        """Инициализация статистики и игрового табла"""
         self.stats = GameStats(self)
-        self.sb = Scoreboard(self)
+        self.sb = Scoreboard(self)    
 
+        """Создаю корабль, группы пуль и пришельцев"""
         self.ship = Ship(self)
         self.bullets = pygame.sprite.Group()
         self.aliens = pygame.sprite.Group()
 
-        self._create_fleet()
+        self._create_fleet()    # Создание прямоугольной группы прешельцев
 
-        self.play_button = Button(self, "Play")
+        self.play_button = Button(self, "Play")    # Создание кнопки "Играть"
 
+    """Запуск основного цикла игры."""
     def run_game(self):
         while True:
-            self._check_events()
+            self._check_events()    # Обработка событий
 
             if self.stats.game_active:
-                self.ship.update()
-                self._update_bullets()
-                self._update_aliens()
+                self.ship.update()    # Обновление позиции корабля
+                self._update_bullets()    # Обновление позиции пуль
+                self._update_aliens()    # Обновление позиции пришельцев
 
-            self._update_screen()
+            self._update_screen() # Перерисовка экрана
 
+    """Обработка нажатий клавиш и событий мыши."""
     def _check_events(self):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -55,50 +61,58 @@ class SpaceShooter:
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 mouse_pos = pygame.mouse.get_pos()
                 self._check_play_button(mouse_pos)
-
+    
+    """Запускаю новую игру при нажатии кнопки Play."""
     def _check_play_button(self, mouse_pos):
         button_clicked = self.play_button.rect.collidepoint(mouse_pos)
         if button_clicked and not self.stats.game_active:
-            self.settings.initialize_dynamic_settings()
+            self.settings.initialize_dynamic_settings()    # Сброс игровых настроек
 
+            """Сброс игровой статистики"""
             self.stats.reset_stats()
             self.stats.game_active = True
             self.sb.prep_score()
             self.sb.prep_level()
             self.sb.prep_ships()
 
+            """Очистка списков пришельцев и пуль"""
             self.aliens.empty()
             self.bullets.empty()
 
+            """Создание новой группы пришельцев и размещение корабля по центру"""
             self._create_fleet()
             self.ship.center_ship()
 
-            pygame.mouse.set_visible(False)
+            pygame.mouse.set_visible(False)    # Скрываем указатель мыши
 
+     """Обработка нажатий клавиш."""
     def _check_keydown_events(self, event):
         if event.key == pygame.K_RIGHT:
             self.ship.moving_right = True
         elif event.key == pygame.K_LEFT:
             self.ship.moving_left = True
         elif event.key == pygame.K_q:
-            sys.exit()
+            sys.exit()    # Выход по клавише Q
         elif event.key == pygame.K_SPACE:
-            self._fire_bullet()
+            self._fire_bullet()    # Выстрел по пробелу
 
+     """Обработка нажатий мыши."""
     def _check_keyup_events(self, event):
         if event.key == pygame.K_RIGHT:
             self.ship.moving_right = False
         elif event.key == pygame.K_LEFT:
             self.ship.moving_left = False
 
+    """Создание новой пули и включение ее в группу"""
     def _fire_bullet(self):
         if len(self.bullets) < self.settings.bullets_allowed:
             new_bullet = Bullet(self)
             self.bullets.add(new_bullet)
 
+    """Обновляет позиции пуль и уничтожает старые пули."""
     def _update_bullets(self):
         self.bullets.update()
-
+    """Удаление пуль, вышедших за край экрана."""
         for bullet in self.bullets.copy():
             if bullet.rect.bottom <= 0:
                 self.bullets.remove(bullet)
